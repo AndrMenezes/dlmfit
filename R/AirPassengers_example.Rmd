@@ -1,0 +1,61 @@
+---
+title: "AirPassengers"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+nms <- paste0(c("models", "variance_law", "update_moments", "forecast", "fit",
+                "plots", "add_pi"), ".R")
+sapply(nms, source)
+
+library(dlm)
+
+library(dplyr)
+library(magrittr)
+library(zoo)
+
+library(ggplot2)
+library(cowplot)
+
+```
+
+The dataset refer to the classic Box and Jenkins airline data. 
+**Monthly** totals of international airline passengers, 1949 to 1960.
+
+
+## Fit
+```{r model, echo=TRUE}
+y <- AirPassengers
+
+model <- poly.dm(order = 2, delta = 0.985) %>%
+  superposition.dm(
+    trig.dm(s = 12, delta = 0.98)
+  )
+m1 <- model %>%
+  fit.dm(y, var_law = "identity", delta_phi = 1)
+```
+
+```{r plot_fit}
+plot.dm.predictive(m1) +
+  ggtitle("One-step ahead preditive distribution")
+
+plot.dm.state(m1, which = "theta_1") +
+  ggtitle("Trend")
+
+plot.dm.state(m1, which = "theta_3") +
+  ggtitle("Seasonal effect")
+```
+
+
+## Forecast
+
+```{r plot_pred}
+plot.dm.forecast(m1, horizon = 12, distr = "predictive") +
+  ggtitle("12-step ahead preditive distribution")
+```
+
+**NOTA:** Para previsão utilizei $W_t$ e $S_t$, em que $t$ é  o ultimo tempo observado.
+Portanto, não atualizei esses valores!!!

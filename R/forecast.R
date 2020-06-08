@@ -21,21 +21,23 @@ forecast.dm <- function(object, horizon, which=c("state", "predictive", "both"))
   nt <- object$final_state$nt
 
   ## initial values
-  at_h <- object$final_state$mt
+  mt <- object$final_state$mt
   Rt_h <- object$final_state$Ct
 
   fore_state <- tibble()
   fore_pred <- tibble()
 
+  GG_h <- GG
   for (h in seq_len(horizon)) {
 
     ## state distribution
-    at_h <- GG^h %*% at_h
-    Rt_h <- tcrossprod(GG^h %*% Rt_h, GG^h) + Wt
+    at_h <- GG_h %*% mt
+    Rt_h <- tcrossprod(GG_h %*% Rt_h, GG_h) + Wt
     ## predictive distribution
     ft_h <- c(crossprod(FF, at_h))
     qt_h <- c(crossprod(FF, Rt_h %*% FF) + st)
 
+    GG_h <- GG_h %*% GG
 
     fore_state <- rbind(
       fore_state,

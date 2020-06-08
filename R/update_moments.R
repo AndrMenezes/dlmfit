@@ -28,14 +28,14 @@
 #'
 
 
-update_moments <- function(y, t, FF, GG, a, R, m0, n0, d0, alpha=1, law="identity", power=1) {
+update_moments <- function(y, t, FF, GG, a, R, n0, d0, alpha=1, law="identity", power=1) {
 
   s0 <- d0 / n0
 
   ## one-step ahead predictive distribution
   f <- crossprod(FF, a)
   k <- variance_law(type=law, mu=f, p=power)
-  Q <- c(crossprod(FF, R %*% FF ) + k * s0)
+  Q <- c(crossprod(FF, R %*% FF) + k * s0)
 
   ## posterior distribution on D_t
   e <- y - f

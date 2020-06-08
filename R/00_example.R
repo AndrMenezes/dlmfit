@@ -14,23 +14,32 @@ nms <- paste0("R/",c("models", "variance_law", "update_moments", "forecast", "fi
 sapply(nms, source)
 
 ## Simple model
-y <- AirPassengers
+y <- log(AirPassengers)
 
-model <- poly.dm(order = 2, delta = 0.985) %>%
+model <- poly.dm(order = 2, delta = 0.98) %>%
   superposition.dm(
-    trig.dm(s = 12, delta = 0.98)
-    #seas.dm(frequency = 2, delta = 0.90)
+    seas.dm(frequency = 12, delta=0.95)
+    #trig.dm(s = 12, delta = 0.95)
   )
-
-m1 <- model %>%
+m <- model %>%
   fit.dm(y)
-m1$lpl
-m1$pred
+x11()
+plot.dm.predictive(m, interval = T)
 
+my_prior <- list(
+  m0 = c(log(100), rep(0, 12)),
+  C0 = diag(c(50, 10, 10, rep(1, 10)))
+)
+m1 <- model %>%
+  fit.dm(y, prior = my_prior)
+
+x11()
 plot.dm.predictive(m1, interval = T)
-plot.dm.state(m1, which = "theta_1")
-plot.dm.state(m1, which = "theta_2")
+
+x11()
 (pf_1 <- plot.dm.forecast(m1, horizon = 12, distr = "predictive"))
+fit_ets <- ets(y, model = "ANA")
+x11();plot(forecast(fit_ets, h = 12))
 
 ## Variance law model (poison)
 m2 <- model %>%
@@ -44,7 +53,7 @@ plot.dm.state(m2, which = "theta_1")
 ## Variance law and evolution
 
 m3 <- model %>%
-  fit.dm(y, var_law = "poisson", delta_phi = 0.96)
+  fit.dm(y, var_law = "identity", delta_phi = 0.96)
 m3$lpl
 
 plot.dm.predictive(m3)
@@ -64,6 +73,7 @@ plot_grid(
   pf_3+ggtitle("m3")
 )
 
+library(forecast)
 fit_ets <- ets(y, model = "MAM")
 x11();plot(forecast(fit_ets, h = 12))
 x11();pf_3
@@ -79,20 +89,24 @@ y  <- c(8.48, 8.7, 8.09, 8.58, 8.94, 8.86, 8.45, 9, 9.2, 9.11, 8.69, 8.87, 9.13,
 y <- ts(y, start = 73, frequency = 4)
 plot(y, type = "o", pch = 19)
 
-model <- poly.dm(order = 2, delta = 0.99) %>%
+model <- poly.dm(order = 2, delta = 0.85) %>%
   superposition.dm(
     trig.dm(s = 4, delta = 0.97)
   )
-
 m1 <- model %>%
-  fit.dm(y)
-m1$lpl
+  fit.dm(
+    y = y,
+    prior = list(
+      m0 = c(8, rep(0, 4)),
+      C0 = diag(c(100, 10, 10, 1, 1))
+    )
+  )
 
-plot.dm.predictive(m1, interval = TRUE)
-plot.dm.state(m1, which = "theta_1")
-(pf_1 <- plot.dm.forecast(m1, horizon = 24, distr = "predictive"))
-m1$final_state$Ct/0.0001
-m1$final_state$mt
-m1$final_state$st
-m1$final_state$nt
+x11()
+plot.dm.predictive(m1)
+plot.dm.state(m1, which = "theta_2", interval.level = 0.1)
+x11()
+plot.dm.forecast(m1, horizon = 12, distr = "predictive")
 
+fit_ets <- ets(y, model = "MAM")
+x11();plot(forecast(fit_ets, h = 12))

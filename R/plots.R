@@ -3,21 +3,32 @@
 # Plot of the one-step ahead predictive distribution ----------------------
 
 plot.dm.predictive <- function(fit, interval = TRUE,
+                               geom_data = "line",
                                interval.type = "exact", interval.level = 0.05) {
 
   ## Number of parameters
   p <- length(fit$final_state$mt)
+  mark_t <- min(index(fit$y)) + diff(tail(index(fit$y), 2)) * p
 
   df <- bind_cols(
     y = as.numeric(fit$y),
     date = index(fit$y),
     fit$pred
   ) %>%
-    slice(-(1:(p + 1)))
+    mutate(
+      f = ifelse(t <= p +1, NA_real_, f)
+    )
+  if(geom_data == "line") {
+    out <- ggplot(df, aes(x = date, y = y)) +
+      geom_line()
+  } else {
+    out <- ggplot(df, aes(x = date, y = y)) +
+      geom_point()
+  }
 
-  out <- ggplot(df, aes(x = date, y = y)) +
-    geom_line() +
-    geom_line(aes(y = f), col = "red") +
+  out <- out +
+    geom_line(aes(y = f), col = "#0000AA") +
+    geom_vline(xintercept = mark_t, linetype = "dashed") +
     theme_cowplot() +
     background_grid()
 
@@ -78,12 +89,14 @@ plot.dm.forecast <- function(fit, horizon, distr = "predictive", which.state = "
       forecast.dm(horizon = horizon, which = "predictive") %>%
       add_pi.dm(type = interval.type, level = interval.level) %>%
       rename(date = t)
+    mark_t <- min(fore$date)
 
     out <- ggplot() +
-      geom_line(data = df, aes(x = date, y = y)) +
-      geom_line(data = fore, aes(x = date, y = a), col = "#0000AA") +
+      geom_line(data=df, aes(x = date, y = y)) +
+      geom_line(data = fore, aes(x = date, y = f), col = "#0000AA") +
       geom_ribbon(data = fore, aes(x = date, ymin = lw, ymax = up),
                   fill = "grey69", alpha = 0.6) +
+      geom_vline(xintercept = mark_t, linetype = "dashed") +
       theme_cowplot() +
       background_grid()
   } else {

@@ -20,5 +20,10 @@ add_pi.dm <- function(tb, type = "exact", level = 0.05) {
       )
   }
 
+  if (!any(names(tb) == "parameter")) {
+    tb <- tb %>%
+      rename(f = a, q = dR)
+  }
+
   tb
 }

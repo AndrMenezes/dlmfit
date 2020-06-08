@@ -5,7 +5,10 @@ model <- poly.dm(order = 2, delta = 0.985) %>%
   superposition.dm(
     trig.dm(s = 4, delta = 0.98)
   )
-delta <- model$delta
+delta <- model$delta[1]
+dim_p <- c(2, 3)[1]
+sapply(1:length(delta), function(x) matrix(1/delta[x],
+                                           nrow=dim_p[x],ncol=dim_p[x]))
 C0 <- diag(100,5)
 D1 <- matrix(1/delta[1],2,2)
 D2 <- matrix(1/delta[2],3,3)

@@ -1,17 +1,18 @@
 ---
 title: "AirPassengers"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo=FALSE)
+knitr::opts_chunk$set(echo=FALSE, warning = FALSE)
 nms <- paste0(c("models", "variance_law", "update_moments", "forecast", "fit",
                 "plots", "add_pi"), ".R")
 sapply(nms, source)
 
 library(dlm)
+library(forecast)
 
 library(dplyr)
 library(magrittr)
@@ -27,20 +28,24 @@ The dataset refer to the classic Box and Jenkins airline data.
 
 
 ## Fit
-```{r model, echo=TRUE}
-y <- AirPassengers
-
+```{r model, echo=TRUE, warning=FALSE}
 model <- poly.dm(order = 2, delta = 0.985) %>%
   superposition.dm(
-    trig.dm(s = 12, delta = 0.98)
+    trig.dm(s = 12, delta = 0.95)
   )
 m1 <- model %>%
-  fit.dm(y, var_law = "identity", delta_phi = 1)
+  fit.dm(
+    y = AirPassengers, 
+    prior = list(
+      m0 = c(100, rep(0, 12)),
+      C0 = diag(c(100, 10, 10, rep(1, 10)))
+    )
+  )
 ```
 
 ```{r plot_fit}
 plot.dm.predictive(m1) +
-  ggtitle("One-step ahead preditive distribution")
+  ggtitle("One-step ahead predictive distribution")
 
 plot.dm.state(m1, which = "theta_1") +
   ggtitle("Trend")
@@ -54,8 +59,12 @@ plot.dm.state(m1, which = "theta_3") +
 
 ```{r plot_pred}
 plot.dm.forecast(m1, horizon = 12, distr = "predictive") +
-  ggtitle("12-step ahead preditive distribution")
+  ggtitle("12-step ahead predictive distribution")
 ```
 
-**NOTA:** Para previsão utilizei $W_t$ e $S_t$, em que $t$ é  o ultimo tempo observado.
-Portanto, não atualizei esses valores!!!
+### Multiplicative Holt-Winters
+```{r, echo=FALSE}
+fit_ets <- ets(AirPassengers, model = "MAM")
+autoplot(forecast(fit_ets, h = 12))
+```
+

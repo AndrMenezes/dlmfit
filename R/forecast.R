@@ -6,14 +6,8 @@ forecast.dm <- function(object, horizon, which=c("state", "predictive", "both"))
   dt <- diff(tail(t, 2))
   t <- max(t)
 
-  ## Define some objects
-  if (is.null(object$model$superposition)) {
-    FF <- t(object$model$FF)
-    GG <- object$model$GG
-  } else {
-    FF <- t(do.call("cbind", object$model$FF))
-    GG <- do.call("bdiag", object$model$GG)
-  }
+  FF <- t(object$model$FF)
+  GG <- object$model$GG
 
   ## Static values
   Wt <- object$final_state$Wt

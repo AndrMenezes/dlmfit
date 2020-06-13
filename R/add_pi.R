@@ -2,7 +2,7 @@ add_pi.dm <- function(tb, type = "exact", level = 0.05) {
 
   if (!any(names(tb) == "parameter")) {
     tb <- tb %>%
-      rename(a = f, dR = q)
+      dplyr::rename(a = f, dR = q)
   }
 
   if (type == "exact") {
@@ -22,7 +22,7 @@ add_pi.dm <- function(tb, type = "exact", level = 0.05) {
 
   if (!any(names(tb) == "parameter")) {
     tb <- tb %>%
-      rename(f = a, q = dR)
+      dplyr::rename(f = a, q = dR)
   }
 
   tb

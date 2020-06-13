@@ -10,36 +10,42 @@ library(ggplot2)
 library(cowplot)
 
 nms <- paste0("R/",c("models", "variance_law", "update_moments", "forecast", "fit",
-                "plots", "add_pi"), ".R")
+                "plots", "add_pi", "smooth"), ".R")
 sapply(nms, source)
 
 ## Simple model
-y <- log(AirPassengers)
-
-model <- poly.dm(order = 2, delta = 0.98) %>%
+model <- poly.dm(order = 2, delta = 0.985) %>%
   superposition.dm(
-    seas.dm(frequency = 12, delta=0.95)
-    #trig.dm(s = 12, delta = 0.95)
+    trig.dm(s = 12, delta = 0.95)
   )
-m <- model %>%
-  fit.dm(y)
-x11()
-plot.dm.predictive(m, interval = T)
-
 my_prior <- list(
-  m0 = c(log(100), rep(0, 12)),
-  C0 = diag(c(50, 10, 10, rep(1, 10)))
+  m0 = c(112, rep(0, 12)),
+  C0 = diag(c(20, 10, 10, rep(1, 10)))
 )
-m1 <- model %>%
-  fit.dm(y, prior = my_prior)
 
+m1 <- model %>%
+  fit.dm(AirPassengers, prior = my_prior)
 x11()
 plot.dm.predictive(m1, interval = T)
+
+s1 <- model %>%
+  smooth.dm(AirPassengers, prior = my_prior)
+s1$mean
+s1$state
+plot.dm.smooth(s1, distr = "mean")
+s1$state %>%
+  filter(parameter == "theta_1") %>%
+  head(20)
+plot.dm.smooth(distr = "state", which.state = "theta_1")
+plot.dm.smooth(s1, distr = "state", which.state = "theta_2")
 
 x11()
 (pf_1 <- plot.dm.forecast(m1, horizon = 12, distr = "predictive"))
 fit_ets <- ets(y, model = "ANA")
 x11();plot(forecast(fit_ets, h = 12))
+
+plot.dm.state(m1, which = "theta_2")
+
 
 ## Variance law model (poison)
 m2 <- model %>%
@@ -97,16 +103,24 @@ m1 <- model %>%
   fit.dm(
     y = y,
     prior = list(
-      m0 = c(8, rep(0, 4)),
-      C0 = diag(c(100, 10, 10, 1, 1))
+      m0 = c(9.5, rep(1, 4)),
+      C0 = diag(c(20, 5, 5, 1, 1))
     )
   )
 
 x11()
 plot.dm.predictive(m1)
-plot.dm.state(m1, which = "theta_2", interval.level = 0.1)
+plot.dm.state(m1, which = "theta_1", interval.level = 0.1)
 x11()
 plot.dm.forecast(m1, horizon = 12, distr = "predictive")
 
-fit_ets <- ets(y, model = "MAM")
-x11();plot(forecast(fit_ets, h = 12))
+s1 <-  model %>%
+  smooth.dm(
+    y = y,
+    prior = list(
+      m0 = c(9.5, rep(1, 4)),
+      C0 = diag(c(20, 5, 5, 1, 1))
+    )
+  )
+plot.dm.smooth(s1, distr = "mean")
+plot.dm.smooth(s1, which.state = "theta_1", distr = "state")

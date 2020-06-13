@@ -33,12 +33,12 @@
 #' @examples
 #'
 #' set.seed(1212)
-#' out = rdlmPoly(n = 100, order = 1, m0 = 2, C0 = 0.5, V=1.5, delta=0.9)
+#' out = rdlmPoly(n = 100, order = 1, m0 = 100, C0 = 10, V=1.5, delta=0.9)
 #' plot(out[['y']], type = 'l')
 #' plot(out[['theta']][, 1], type = 'l')
 #'
 #' set.seed(1212)
-#' out = rdlmPoly(n = 100, order = 2, m0 = c(1.0, 0.2), C0 = diag(0.5, 2), V=1.5, delta=0.9)
+#' out = rdlmPoly(n = 50, order = 2, m0 = c(100, 10), C0 = diag(10, 2), V=2, delta=0.8)
 #' plot(out[['y']], type = 'l')
 #' plot(out[['theta']][, 1], type = 'l')
 #' plot(out[['theta']][, 2], type = 'l')
@@ -81,5 +81,53 @@ rdlmPoly <- function(n, order, m0, C0, V, delta=0.95)
   }
   list(y=y, theta=theta)
 }
+
+
+# n <- 50
+# omega_1 <- rnorm(n, mean = 0, sd = 3)
+# omega_2 <- rnorm(n, mean = 0, sd = 1)
+# epsilon <- rnorm(n, mean = 0, sd = 35)
+# theta_1 <- c(100, rep(NA, n-1))
+# theta_2 <- c(10, rep(NA, n-1))
+# y <- c()
+# for (j in 2:n) {
+#   theta_1[j] <- theta_1[j-1] + theta_2[j-1] + omega_1[j]
+#   theta_2[j] <- theta_2[j-1] + omega_2[j]
+#   y[j] <- theta_1[j] + epsilon[j]
+# }
+# plot(y, type = "l")
+#
+# model <- poly.dm(order = 2, delta = 0.95)
+# fit <- fit.dm(model, y[-1],
+#               prior = list(m0 = c(100, 0),
+#                            C0 = diag(1000, 2)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

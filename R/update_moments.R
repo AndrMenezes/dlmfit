@@ -4,7 +4,7 @@
 #'
 #' @title Compute the posterior and predictive moments at time \eqn{t}.
 #'
-#' @description The function is used in \code{dlmfit} to calculate recursively the expected value and variance of posterior
+#' @description The function is used in \code{fit.dm} to calculate recursively the expected value and variance of posterior
 #' and predictive distributions at time \eqn{t}.
 #'
 #' @author André F. B. Menezes \email{andrefelipemaringa@gmail.com}
@@ -18,14 +18,12 @@
 #' @param GG matrix \eqn{\bold{GG}_t} of the model.
 #' @param a vector \eqn{\bold{a}_t} of the model.
 #' @param R matrix \eqn{\bold{R} = \bold{P} + \bold{W}} of the model.
-#' @param m0 prior mean at time \eqn{t} for \eqn{\bold{\theta}_t}.
 #' @param C0 prior variance at time \eqn{t} for \eqn{\bold{\theta}_t}.
 #' @param n0 prior shape parameter of the Gamma distribuition at time \eqn{t} for \eqn{\phi=V^{-1}}.
 #' @param d0 prior degree of freedom at time \eqn{t} for \eqn{\phi=V^{-1}}.
 #' @param alpha discount factor of variance evolution.
 #' @param law specify the type of variance law.
 #' @param power parameter for power variance law.
-#'
 
 
 update_moments <- function(y, t, FF, GG, a, R, n0, d0, alpha=1, law="identity", power=1) {

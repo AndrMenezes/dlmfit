@@ -27,7 +27,7 @@ plot.dm.predictive <- function(fit, interval = TRUE,
   }
 
   out <- out +
-    geom_line(aes(y = f), col = "#0000AA") +
+    geom_line(aes(y = f), col = "#0000AA", size = 1.0) +
     geom_vline(xintercept = mark_t, linetype = "dashed") +
     theme_cowplot() +
     background_grid()
@@ -93,7 +93,7 @@ plot.dm.forecast <- function(fit, horizon, distr = "predictive", which.state = "
 
     out <- ggplot() +
       geom_line(data=df, aes(x = date, y = y)) +
-      geom_line(data = fore, aes(x = date, y = f), col = "#0000AA") +
+      geom_line(data = fore, aes(x = date, y = f), col = "#0000AA", size = 1) +
       geom_ribbon(data = fore, aes(x = date, ymin = lw, ymax = up),
                   fill = "grey69", alpha = 0.6) +
       geom_vline(xintercept = mark_t, linetype = "dashed") +
@@ -105,13 +105,13 @@ plot.dm.forecast <- function(fit, horizon, distr = "predictive", which.state = "
         add_pi.dm(type = interval.type, level = interval.level) %>%
         rename(date = t)
       if(which.state != "all") {
-        fore %>%
+        fore <- fore %>%
           filter(parameter %in% which.state)
       }
 
       out <- ggplot(fore, aes(x = date, y = a)) +
         facet_wrap(~parameter, scales = "free_y") +
-        geom_line(col = "#0000AA") +
+        geom_line() +
         geom_ribbon(aes(ymin = lw, ymax = up), fill = "grey69", alpha = 0.6) +
         theme_cowplot() +
         background_grid()
@@ -119,4 +119,54 @@ plot.dm.forecast <- function(fit, horizon, distr = "predictive", which.state = "
   out
 }
 
+
+# Plot of the smooth distribution -----------------------------------------
+
+plot.dm.smooth <- function(fit, which.state = "all", distr = "mean",
+                           interval.type = "exact", interval.level = 0.05) {
+
+  p <- length(fit$prior$m0)
+
+  if (distr == "mean") {
+    df <- bind_cols(
+      y = as.numeric(fit$y),
+      date = index(fit$y)
+    ) %>%
+      slice(-n()) %>%
+      bind_cols(
+        fit$mean %>%
+          rename(f = ft_k, q = qt_k) %>%
+          add_pi.dm(type = interval.type, level = interval.level)
+      )
+    out <- ggplot(data=df, aes(x = date, y = y)) +
+      geom_line() +
+      geom_line(aes(y = f), col = "#0000AA", size = 1) +
+      geom_ribbon(aes(ymin = lw, ymax = up), fill = "grey69", alpha = 0.6) +
+      theme_cowplot() +
+      background_grid()
+  } else {
+    n <- length(fit$y)
+    aux  <- tibble(t = 1:(n-1), date = index(fit$y)[-n])
+    df <- fit$state %>%
+      arrange(t) %>%
+      left_join(aux, by = "t") %>%
+      rename(a = at_k, dR = Rt_k) %>%
+      add_pi.dm(type = interval.type, level = interval.level)
+
+    if (any(which.state != "all")) {
+      df <- df %>%
+        filter(parameter %in% which.state)
+    }
+
+    out <- ggplot(df, aes(x = date, y = a)) +
+      facet_wrap(~parameter, scales = "free_y") +
+      geom_line() +
+      geom_ribbon(aes(ymin = lw, ymax = up), fill = "grey69", alpha = 0.6) +
+      theme_cowplot() +
+      background_grid()
+  }
+  out
+
+
+}
 

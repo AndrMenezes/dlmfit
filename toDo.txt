@@ -1,0 +1,20 @@
+- Incluir residuos e medidas de previsão (MASE, MAPE, RMSE).
+	- E gráficos.
+- Implementar Regressão.
+- Implementar modelo não linear.
+- Colocar alguns exemplos do livro do Pole, West e Harisson.
+- Opção para transformações nos dados via familia Box-Cox (lambda):
+	- Obter a media e variancia original a partir das transformadas.
+	- Usar lei de variância.
+- Monitoramento e intervenção.
+- Incluir prioris mais informativas para m0 e C0 conforme as componentes:
+	- Polynomial.
+	- Sazonal (trig e fator).	
+	
+	
+	
+	
+	
+	
+	
+			

@@ -1,26 +1,11 @@
 fit.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1) {
 
-  ## Define some objects
-  if (is.null(model$superposition)) {
-    FF <- t(model$FF)
-    GG <- model$GG
-    dim_p <- nrow(GG)
-    D <- matrix(1/model$delta,nrow=dim_p, ncol=dim_p)
-  } else {
-    FF <- t(do.call("cbind", model$FF))
-    GG <- do.call("bdiag", model$GG)
-    dim_p <- sapply(model$FF, ncol)
-    delta <- model$delta
-    aux <- sapply(1:length(delta), function(i) {
-      matrix(1/delta[i], nrow=dim_p[i],ncol=dim_p[i])
-      #diag(1/delta[i], nrow = dim_p[i], ncol=dim_p[i])
-    })
-    D <- do.call("bdiag", aux)
-  }
+  FF <- t(model$FF)
+  GG <- model$GG
+  D  <- model$D
 
-
-  ## Define prior distribution
   p  <- nrow(FF)
+  ## Define prior distribution
   m0 <- rep(0, p)
   C0 <- diag(100, p)
   n0 <- 0.01
@@ -72,6 +57,8 @@ fit.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1)
     tb_state <- bind_rows(tb_state, out[["state"]])
     tb_pred <- bind_rows(tb_pred, out[["pred"]])
   }
+
+
   final_state <- list(
     Wt = R - P,
     mt = m0,
@@ -106,11 +93,3 @@ fit.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1)
 }
 
 
-
-
-
-
-
-# smooth.dm <- function(formula, y, prior) {
-#
-# }

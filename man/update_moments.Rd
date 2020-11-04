@@ -4,31 +4,45 @@
 \alias{update_moments}
 \title{Compute the posterior and predictive moments at time \eqn{t}.}
 \usage{
-update_moments(y, t, FF, GG, R, m0, C0, S0, n0, level)
+update_moments(
+  y,
+  t,
+  FF,
+  GG,
+  a,
+  R,
+  n0,
+  d0,
+  alpha = 1,
+  law = "identity",
+  power = 1
+)
 }
 \arguments{
 \item{y}{observed value at time \eqn{t}.}
 
 \item{t}{observed time.}
 
-\item{FF}{vector \eqn{\bold{FF}_t} of the model.}
+\item{FF}{vector \eqn{\bold{F}_t} of the model.}
 
-\item{GG}{matrix \eqn{\bold{GG}_t} of the model.}
+\item{GG}{matrix \eqn{\bold{G}_t} of the model.}
+
+\item{a}{vector \eqn{\bold{a}_t} of the model.}
 
 \item{R}{matrix \eqn{\bold{R} = \bold{P} + \bold{W}} of the model.}
 
-\item{m0}{prior mean at time \eqn{t} for \eqn{\bold{\theta}_t}.}
-
-\item{C0}{prior variance at time \eqn{t} for \eqn{\bold{\theta}_t}.}
-
-\item{S0}{prior variance at time \eqn{t} for \eqn{\phi=V^{-1}}.}
-
 \item{n0}{prior shape parameter of the Gamma distribuition at time \eqn{t} for \eqn{\phi=V^{-1}}.}
 
-\item{level}{cumulative probability (\eqn{\alpha}) to compute confidence limits.}
+\item{d0}{prior degree of freedom at time \eqn{t} for \eqn{\phi=V^{-1}}.}
+
+\item{alpha}{discount factor of variance evolution.}
+
+\item{law}{specify the type of variance law.}
+
+\item{power}{parameter for power variance law.}
 }
 \description{
-The function is used in \code{dlmfit} to calculate recursively the expected value and variance of posterior
+The function is used in \code{fit.dm} to calculate recursively the expected value and variance of posterior
 and predictive distributions at time \eqn{t}.
 }
 \references{

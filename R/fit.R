@@ -1,4 +1,31 @@
-fit.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1) {
+#' @name kalmanDist
+#'
+#' @title Fitting Dynamic Models
+#'
+#' @description Fitting univariate Dynamic Models via discount factor principle.
+#'
+#' @author André F. B. Menezes \email{andrefelipemaringa@gmail.com}
+#'
+#' @references West, M.; Harrison, J. Bayesian Forecasting and Dynamic Models. Springer, 1997.
+#'
+#' @param model \code{dm} class object.
+#' @param y observed data.
+#' @param prior list specifying the prior parameters.
+#' @param var_law name of the variance law.
+#' @param pow parameter power for the variance law.
+#' @param delta_phi discount factor for variance evolution.
+#'
+#'
+#' @importFrom zoo as.zoo
+#' @importFrom dplyr bind_rows mutate summarise pull
+#' @importFrom magrittr %>%
+#' @importFrom stats dt sd quantile
+NULL
+
+#' @rdname kalmanDist
+#' @export
+
+filterDist <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1) {
 
   FF <- t(model$FF)
   GG <- model$GG
@@ -47,8 +74,7 @@ fit.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1)
 
     out <- update_moments(y[t], t,
                           FF, GG, a, R,
-                          n0, d0,
-                          alpha=delta_phi, law=var_law)
+                          n0, d0)
     m0 <- out[["m"]]
     C0 <- out[["C"]]
     d0 <- out[["d"]]
@@ -67,29 +93,76 @@ fit.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1)
     nt = n0
   )
 
-  lpl <- tb_pred %>%
+  meas <- tb_pred %>%
     mutate(
       y = y,
       pl = dt((y - f) / sqrt(q), df) / sqrt(q)
     ) %>%
-    summarise(sum(log(pl), na.rm = TRUE)) %>%
-    pull()
+    summarise(
+      lpl = sum(log(pl), na.rm = TRUE),
+      rmse = Metrics::rmse(y, f),
+      mase = Metrics::mase(y, f),
+      mape = Metrics::mape(y, f),
+      mdae = Metrics::mdae(y, f),
+      mae  = Metrics::mae(y, f)
+    )
 
+  measures <- c(rmse = meas$rmse,
+                mase = meas$mase,
+                mape = meas$mape,
+                mdae = meas$mdae,
+                mae = meas$mae)
+
+  res <- (y - tb_pred$f) / sd(y - tb_pred$f)
+  res < zoo::zoo(res, index = zoo::index(y_zoo))
 
   out <- list(
-    y = y_zoo,
+    call = match.call(),
     model = model,
-    lpl = lpl,
+    lpl = meas$lpl,
+    residuals = res,
+    measures = measures,
     var_law = var_law,
     pow = pow,
     delta_phi = delta_phi,
     prior = prior,
     state = tb_state,
     pred = tb_pred,
-    final_state = final_state
+    final_state = final_state,
+    y = y_zoo
   )
-  class(out) <- "dm"
+
+  class(out) <- "filterDist"
   out
 }
 
+#' @export
 
+print.filterDist <- function(x, ...) {
+
+  cat(paste0("Call:\n", deparse(x$call), "\n\n"))
+
+  cat("Filter distribution", "\n\n")
+
+  aux <- x$model$dim_p
+  if (length(aux) > 1) cat(paste0(aux[1], " " ,names(aux)[1], " with ", aux[2], " components of ", names(aux)[2]), "\n \n")
+  else cat(paste0(aux[1], names(aux)[1]))
+
+  cat(paste0("Variance law: ", x$var_law), "\n")
+
+  cat(paste0("Variance discount factor: ", x$delta_phi), "\n\n")
+
+  cat(paste0("Predictive log-likelihod: ", round(x$lpl, 4)), "\n \n")
+
+  cat("Measures of one-step ahead predictions errors:\n")
+  print(round(x$measures, 4))
+  cat("\n\n")
+
+  qts <- quantile(x$residuals, probs = c(0.25, 0.5, 0.75))
+  names(qts) <- c("1Q", "Median", "3Q")
+  sts <- round(c(Min = min(x$residuals), qts, Max = max(x$residuals)), 4)
+  cat("Residuals:\n")
+  print(qts)
+
+  invisible()
+}

@@ -1,21 +1,78 @@
-# fit <- model_fit
+#' @name plots
+#' @aliases PlotPredictive PlotState PlotForecast PlotSmooth
+#'
+#' @title Plottting functions
+#'
+#' @description Functions to plot the results of a model fit or smooth.
+#'
+#' @author André F. B. Menezes \email{andrefelipemaringa@gmail.com}
+#'
+#' @param object \code{dm} class object from \code{fit} or \code{smooth} functions.
+#' @param horizon horizon of forecast
+#' @param which.distr which distribution to plot
+#' @param which.state which state to plot
+#' @param interval logical indicating if the interval will be plot
+#' @param interval.type which type of interval to use
+#' @param interval.level which significance level to use
+#' @param geom_data if the observed data will be represent by point or lines
+#' @param x não sei
+#' @param ... currently not used.
+#'
+#' @import ggplot2
+#' @importFrom magrittr %>%
+#' @importFrom cowplot theme_cowplot background_grid
+#' @importFrom utils tail
+
+plot.dm <- function(x, ...) {
+
+  mod <- x$model$mod
+  p   <- x$model$dim_p
+  if (mod == "polynomial") {
+    # Quais plots fazer para modelos só polinomiais?
+    p1 <- PlotPredictive(x)
+    p2 <- PlotState(x, which.state = "theta_1")
+    #p3 <- PlotResiduals(x)
+    if (p == 1) {
+
+
+    }
+
+  }
+  else if (mod %in% c("seasonal_free", "seasonal_fourier")) {
+
+  }
+  else if (grepl("+", mod, fixed = T) ) {
+    if (any(mod == "regression")) {
+
+    } else {
+
+
+
+    }
+
+  }
+
+}
+
 
 # Plot of the one-step ahead predictive distribution ----------------------
-
-plot.dm.predictive <- function(fit, interval = TRUE,
+#' @export
+#' @rdname plots
+PlotPredictive <- function(object, interval = TRUE,
                                geom_data = "line",
-                               interval.type = "exact", interval.level = 0.05) {
+                               interval.type = "exact",
+                               interval.level = 0.05) {
 
   ## Number of parameters
-  p <- length(fit$final_state$mt)
-  mark_t <- min(index(fit$y)) + diff(tail(index(fit$y), 2)) * p
+  p <- length(object$final_state$mt)
+  mark_t <- min(index(object$y)) + diff(tail(index(object$y), 2)) * p
 
-  df <- bind_cols(
-    y = as.numeric(fit$y),
-    date = index(fit$y),
-    fit$pred
+  df <- dplyr::bind_cols(
+    y = as.numeric(object$y),
+    date = index(object$y),
+    object$pred
   ) %>%
-    mutate(
+    dplyr::mutate(
       f = ifelse(t <= p +1, NA_real_, f)
     )
   if(geom_data == "line") {
@@ -33,7 +90,7 @@ plot.dm.predictive <- function(fit, interval = TRUE,
     background_grid()
 
   if (interval) {
-    df <- add_pi.dm(df, type = interval.type, level = interval.level)
+    df <- add_pi(df, type = interval.type, level = interval.level)
     out <- out +
       geom_ribbon(data = df, aes(ymin = lw, ymax = up), alpha = 0.6, fill = "grey69")
   }
@@ -42,18 +99,18 @@ plot.dm.predictive <- function(fit, interval = TRUE,
 }
 
 # Plot of the parameter state distribution --------------------------------
+#' @export
+#' @rdname plots
+PlotState <- function(object, which.state = "all", interval.type = "exact", interval.level = 0.05) {
 
-plot.dm.state <- function(fit, which = "all",
-                          interval.type = "exact", interval.level = 0.05) {
+  p <- length(object$final_state$mt)
+  aux <- tibble(t = object$pred$t, date = index(object$y))
+  df <- object$state %>%
+    dplyr::left_join(aux, by = "t") %>%
+    dplyr::filter(t > p + 1) %>%
+    add_pi(type = interval.type, level = interval.level)
 
-  p <- length(fit$final_state$mt)
-  aux  <- tibble(t = fit$pred$t, date = index(fit$y))
-  df <- fit$state %>%
-    left_join(aux, by = "t") %>%
-    filter(t > p + 1) %>%
-    add_pi.dm(type = interval.type, level = interval.level)
-
-  if(any(which == "all")) {
+  if (any(which.state == "all")) {
     out <- ggplot(df, aes(x = date, y = a)) +
       facet_wrap(~parameter, scales = "free_y") +
       geom_line() +
@@ -62,7 +119,7 @@ plot.dm.state <- function(fit, which = "all",
       background_grid()
   } else {
     out <- df %>%
-      filter(parameter %in% which) %>%
+      dplyr::filter(parameter %in% which.state) %>%
       ggplot(aes(x = date, y = a)) +
       facet_wrap(~parameter, scales = "free_y") +
       geom_line() +
@@ -74,21 +131,22 @@ plot.dm.state <- function(fit, which = "all",
 }
 
 # Plot of the forecast distribution ---------------------------------------
-
-plot.dm.forecast <- function(fit, horizon, distr = "predictive", which.state = "all",
-                             interval.type = "exact", interval.level = 0.05) {
+#' @export
+#' @rdname plots
+PlotForecast <- function(object, horizon, which.distr = "predictive", which.state = "all",
+                         interval.type = "exact", interval.level = 0.05) {
   ## number of parameters
-  p <- length(fit$final_state$mt)
+  p <- length(object$final_state$mt)
 
-  if (distr == "predictive") {
-    df <- bind_cols(
-      y = as.numeric(fit$y),
-      date = index(fit$y)
+  if (which.distr == "predictive") {
+    df <- dplyr::bind_cols(
+      y = as.numeric(object$y),
+      date = index(object$y)
     )
-    fore <- fit %>%
-      forecast.dm(horizon = horizon, which = "predictive") %>%
-      add_pi.dm(type = interval.type, level = interval.level) %>%
-      rename(date = t)
+    fore <- object %>%
+      forecast(horizon = horizon, distr = "predictive") %>%
+      add_pi(type = interval.type, level = interval.level) %>%
+      dplyr::rename(date = t)
     mark_t <- min(fore$date)
 
     out <- ggplot() +
@@ -100,13 +158,13 @@ plot.dm.forecast <- function(fit, horizon, distr = "predictive", which.state = "
       theme_cowplot() +
       background_grid()
   } else {
-      fore <- fit %>%
-        forecast.dm(horizon = horizon, which = "state") %>%
-        add_pi.dm(type = interval.type, level = interval.level) %>%
-        rename(date = t)
-      if(which.state != "all") {
+      fore <- object %>%
+        forecast(horizon = horizon, distr = "state") %>%
+        add_pi(type = interval.type, level = interval.level) %>%
+        dplyr::rename(date = t)
+      if (any(which.state != "all")) {
         fore <- fore %>%
-          filter(parameter %in% which.state)
+          dplyr::filter(parameter %in% which.state)
       }
 
       out <- ggplot(fore, aes(x = date, y = a)) +
@@ -120,23 +178,34 @@ plot.dm.forecast <- function(fit, horizon, distr = "predictive", which.state = "
 }
 
 
+# Plot of the standardized residuals --------------------------------------
+#' @export
+#' @rdname plots
+PlotResiduals <- function(object) {
+
+
+
+}
+
+
 # Plot of the smooth distribution -----------------------------------------
+#' @export
+#' @rdname plots
+PlotSmooth <- function(object, which.distr = "mean", which.state = "all",
+                       interval.type = "exact", interval.level = 0.05) {
 
-plot.dm.smooth <- function(fit, which.state = "all", distr = "mean",
-                           interval.type = "exact", interval.level = 0.05) {
+  p <- length(object$prior$m0)
 
-  p <- length(fit$prior$m0)
-
-  if (distr == "mean") {
-    df <- bind_cols(
-      y = as.numeric(fit$y),
-      date = index(fit$y)
+  if (which.distr == "mean") {
+    df <- dplyr::bind_cols(
+      y = as.numeric(object$y),
+      date = index(object$y)
     ) %>%
-      slice(-n()) %>%
-      bind_cols(
-        fit$mean %>%
-          rename(f = ft_k, q = qt_k) %>%
-          add_pi.dm(type = interval.type, level = interval.level)
+      dplyr::slice(-n()) %>%
+      dplyr::bind_cols(
+        object$mean %>%
+          dplyr::rename(f = ft_k, q = qt_k) %>%
+          add_pi(type = interval.type, level = interval.level)
       )
     out <- ggplot(data=df, aes(x = date, y = y)) +
       geom_line() +
@@ -145,17 +214,17 @@ plot.dm.smooth <- function(fit, which.state = "all", distr = "mean",
       theme_cowplot() +
       background_grid()
   } else {
-    n <- length(fit$y)
-    aux  <- tibble(t = 1:(n-1), date = index(fit$y)[-n])
-    df <- fit$state %>%
-      arrange(t) %>%
-      left_join(aux, by = "t") %>%
-      rename(a = at_k, dR = Rt_k) %>%
-      add_pi.dm(type = interval.type, level = interval.level)
+    n <- length(object$y)
+    aux  <- dplyr::tibble(t = 1:(n-1), date = index(object$y)[-n])
+    df <- object$state %>%
+      dplyr::arrange(t) %>%
+      dplyr::left_join(aux, by = "t") %>%
+      dplyr::rename(a = at_k, dR = Rt_k) %>%
+      add_pi(type = interval.type, level = interval.level)
 
     if (any(which.state != "all")) {
       df <- df %>%
-        filter(parameter %in% which.state)
+        dplyr::filter(parameter %in% which.state)
     }
 
     out <- ggplot(df, aes(x = date, y = a)) +
@@ -166,7 +235,5 @@ plot.dm.smooth <- function(fit, which.state = "all", distr = "mean",
       background_grid()
   }
   out
-
-
 }
 

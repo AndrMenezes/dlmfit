@@ -1,8 +1,26 @@
-smooth.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1) {
+#' @title Smooth distribution
+#'
+#' @description Get the smooth distribution for univariate Dynamic Models.
+#'
+#' @author André F. B. Menezes \email{andrefelipemaringa@gmail.com}
+#'
+#' @references West, M.; Harrison, J. Bayesian Forecasting and Dynamic Models. Springer, 1997.
+#'
+#' @param model \code{dm} class object.
+#' @param y observed data.
+#' @param prior list specifying the prior parameters.
+#' @param var_law name of the variance law.
+#' @param pow parameter power for the variance law.
+#' @param delta_phi discount factor for variance evolution.
+#'
+#' @rdname kalmanDist
+#' @export
+
+smoothDist <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi=1) {
 
   FF <- t(model$FF)
   GG <- model$GG
-  D <- model$D
+  D  <- model$D
   p  <- nrow(FF)
   ## Define prior distribution
   m0 <- rep(0, p)
@@ -65,7 +83,7 @@ smooth.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi
     st[t] <- d0 / n0
   }
 
-  t    <- nt
+  t <- nt
   ## a_t(0)
   at_k <- l_m[[t]]
   ## R_t(0)
@@ -106,22 +124,39 @@ smooth.dm <- function(model, y, prior=NULL, var_law="identity", pow=1, delta_phi
       )
     )
   }
-  tb_state <- arrange(tb_state, t)
-  tb_mean <- arrange(tb_mean, t)
+  tb_state <- dplyr::arrange(tb_state, t)
+  tb_mean <- dplyr::arrange(tb_mean, t)
   out <- list(
+    call = match.call(),
     y = y_zoo,
     model = model,
     var_law = var_law,
     pow = pow,
     delta_phi = delta_phi,
     prior = prior,
-    state = arrange(tb_state, t),
-    mean = arrange(tb_mean, t)
+    state = tb_state,
+    mean = tb_mean
   )
-  class(out) <- "dm"
+  class(out) <- "smoothDist"
   out
 }
 
+#' @export
 
+print.smoothDist <- function(x, ...) {
+
+  cat(paste0("Call:\n", deparse(x$call), "\n\n"))
+
+  cat("Smooth distribution", "\n\n")
+  aux <- x$model$dim_p
+  if (length(aux) > 1) cat(paste0(aux[1], " " ,names(aux)[1], " with ", aux[2], " components of ", names(aux)[2]), "\n \n")
+  else cat(paste0(aux[1], names(aux)[1]))
+
+  cat(paste0("Variance law: ", x$var_law), "\n")
+
+  cat(paste0("Variance discount factor: ", x$delta_phi), "\n\n")
+
+  invisible()
+}
 
 

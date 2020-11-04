@@ -1,10 +1,27 @@
+#' @title Forecast function for Dynamic Models
+#'
+#' @description Forecast univariate Dynamic Models.
+#'
+#' @author André F. B. Menezes \email{andrefelipemaringa@gmail.com}
+#'
+#' @references West, M.; Harrison, J. Bayesian Forecasting and Dynamic Models. Springer, 1997.
+#'
+#' @param object \code{dm} class object from \code{fit.dm} function.
+#' @param horizon horizon of the forecast
+#' @param distr forecast the predictive, state or both distributions?
+#'
+#' @importFrom utils tail
+#' @importFrom zoo index
+#'
+#' @rdname forecast
+#' @export
 
-forecast.dm <- function(object, horizon, which=c("state", "predictive", "both")) {
+forecast <- function(object, horizon, distr=c("state", "predictive", "both")) {
 
   ## specifying the changes in time
-  t <- tail(index(object$y), 2)
+  t  <- tail(index(object$y), 2)
   dt <- diff(tail(t, 2))
-  t <- max(t)
+  t  <- max(t)
 
   FF <- t(object$model$FF)
   GG <- object$model$GG
@@ -55,7 +72,7 @@ forecast.dm <- function(object, horizon, which=c("state", "predictive", "both"))
     )
   }
 
-  out <- switch (which,
+  out <- switch (distr,
     "state" = fore_state,
     "predictive" = fore_pred,
     "both" = list(

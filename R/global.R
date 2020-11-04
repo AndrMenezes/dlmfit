@@ -1,1 +1,4 @@
-utils::globalVariables(c("index", "value", "theta_1", "Up_1", "Lw_1", "theta", "m", "est", "parms", "Up", "Lw", "f", "Q"))
+utils::globalVariables(
+  c("y","a", "f", "index", "df", "dR", "pl", "lw", "up",
+    "parameter", "ft_k", "qt_k", "at_k", "Rt_k")
+)
